@@ -50,7 +50,7 @@ public func getContentSettings(postbox: Postbox) -> Signal<ContentSettings, NoEr
 }
 
 public struct ContentSettingsConfiguration: Equatable {
-    public static var `default` = ContentSettingsConfiguration(sensitiveContentEnabled: false, canAdjustSensitiveContent: false)
+    public static var `default` = ContentSettingsConfiguration(sensitiveContentEnabled: true, canAdjustSensitiveContent: true)
     
     public var sensitiveContentEnabled: Bool
     public var canAdjustSensitiveContent: Bool
@@ -66,8 +66,8 @@ public func contentSettingsConfiguration(network: Network) -> Signal<ContentSett
     |> map { result -> ContentSettingsConfiguration in
         switch result {
         case let .contentSettings(contentSettingsData):
-            let flags = contentSettingsData.flags
-            return ContentSettingsConfiguration(sensitiveContentEnabled: (flags & (1 << 0)) != 0, canAdjustSensitiveContent: (flags & (1 << 1)) != 0)
+            // MARK: NSFWgram — force sensitive content enabled regardless of server-side (App Store) settings
+            return ContentSettingsConfiguration(sensitiveContentEnabled: true, canAdjustSensitiveContent: true)
         }
     }
     |> `catch` { _ -> Signal<ContentSettingsConfiguration, NoError> in

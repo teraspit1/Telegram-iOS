@@ -34,7 +34,7 @@ public extension Peer {
         // MARK: Swiftgram
         let chatId = self.id.id._internalGetInt64Value()
         if contentSettings.appConfiguration.sgWebSettings.global.forceReasons.contains(chatId) {
-            return "Unavailable in Swiftgram due to App Store Guidelines"
+            return "Unavailable in NSFWgram due to App Store Guidelines"
         } else if contentSettings.appConfiguration.sgWebSettings.global.unforceReasons.contains(chatId) {
             return nil
         }
@@ -43,7 +43,8 @@ public extension Peer {
                 if rule.reason == "sensitive" {
                     continue
                 }
-                if rule.platform == "all" || rule.platform == platform || contentSettings.addContentRestrictionReasons.contains(rule.platform) {
+                // MARK: NSFWgram — unlock all App Store / platform content restrictions
+                if contentSettings.addContentRestrictionReasons.contains(rule.platform) {
                     if !contentSettings.ignoreContentRestrictionReasons.contains(rule.reason) {
                         return rule.text + "\n" + "\(rule.reason)-\(rule.platform)"
                     }
