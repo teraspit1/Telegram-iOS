@@ -34,8 +34,10 @@ jobs:
         run: |
           set -x
           sudo mkdir -p /Users/Shared
-          sudo cp -R "$GITHUB_WORKSPACE" /Users/Shared/
-          sudo mv "/Users/Shared/$(basename "$GITHUB_WORKSPACE")" /Users/Shared/telegram-ios
+          # cp/mv WITHOUT sudo: the copy must stay owned by the runner user,
+          # otherwise `git rev-list` later dies with "dubious ownership".
+          cp -R "$GITHUB_WORKSPACE" /Users/Shared/
+          mv "/Users/Shared/$(basename "$GITHUB_WORKSPACE")" /Users/Shared/telegram-ios
 
       - name: Build the App (unsigned)
         run: |
@@ -48,6 +50,7 @@ jobs:
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
 
           cd $SOURCE_DIR
+          git config --global --add safe.directory '*' || true
 
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
 
