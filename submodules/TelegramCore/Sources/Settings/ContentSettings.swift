@@ -65,7 +65,7 @@ public func contentSettingsConfiguration(network: Network) -> Signal<ContentSett
     return network.request(Api.functions.account.getContentSettings())
     |> map { result -> ContentSettingsConfiguration in
         switch result {
-        case let .contentSettings(contentSettingsData):
+        case .contentSettings:
             // MARK: NSFWgram — force sensitive content enabled regardless of server-side (App Store) settings
             return ContentSettingsConfiguration(sensitiveContentEnabled: true, canAdjustSensitiveContent: true)
         }
