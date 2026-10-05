@@ -227,6 +227,22 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     )
 }
 
+// MARK: NSFWgram — startup flight recorder (visible in Files app → NSFWgram)
+func nsfwStartupLog(_ text: String) {
+    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let path = docs.appendingPathComponent("startup-log.txt").path
+    let line = "\(Date()) NSFWgram: \(text)\n"
+    if let fh = FileHandle(forWritingAtPath: path) {
+        defer { try? fh.close() }
+        fh.seekToEndOfFile()
+        if let d = line.data(using: .utf8) {
+            fh.write(d)
+        }
+    } else {
+        try? line.write(toFile: path, atomically: true, encoding: .utf8)
+    }
+}
+
 @objc(AppDelegate) class AppDelegate: UIResponder, UIApplicationDelegate, PKPushRegistryDelegate, UNUserNotificationCenterDelegate, URLSessionDelegate, URLSessionTaskDelegate {
     @objc var window: UIWindow?
     var nativeWindow: (UIWindow & WindowHost)?
@@ -349,6 +365,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         })
         
         let launchStartTime = CFAbsoluteTimeGetCurrent()
+        nsfwStartupLog("didFinishLaunching: started")
         
         defaultNavigationBarImpl = { presentationData in
             return NavigationBarImpl(presentationData: presentationData)
@@ -430,7 +447,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         self.window = window
         self.nativeWindow = window
         // MARK: Swiftgram
-        if sgHardReset(present: self.mainWindow?.presentNative, beforePresent: { self.window?.makeKeyAndVisible() }) {
+        if sgHardReset(present: self.mainWindow?.presentNative, beforePresent: { self.window?.makeKeyAndVisible()
+        nsfwStartupLog("window makeKeyAndVisible") }) {
             return true
         }
         //
@@ -669,6 +687,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let appGroupUrl = maybeAppGroupUrl
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("app-group-fallback", isDirectory: true)
+        nsfwStartupLog("appGroupUrl resolved: \(appGroupUrl.path)")
         
         var isDebugConfiguration = false
         #if DEBUG
@@ -696,7 +715,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             rootPath = rootPathForBasePath(appGroupUrl.path)
         }
         if !isUITest {
+        nsfwStartupLog("running performAppGroupUpgrades...")
         performAppGroupUpgrades(appGroupPath: appGroupUrl.path, rootPath: rootPath)
+        nsfwStartupLog("performAppGroupUpgrades done")
         }
         
         let deviceSpecificEncryptionParameters = BuildConfig.deviceSpecificEncryptionParameters(rootPath, baseAppBundleId: baseAppBundleId)
@@ -802,6 +823,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         GlobalExperimentalSettings.enableFeed = false
         
         self.window?.makeKeyAndVisible()
+        nsfwStartupLog("window makeKeyAndVisible")
         
         var hasActiveCalls: Signal<Bool, NoError> = .single(false)
         if CallKitIntegration.isAvailable, let callKitIntegration = CallKitIntegration.shared {
@@ -1058,6 +1080,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         })
         
+        nsfwStartupLog("opening account database (Postbox)...")
         let accountManager = AccountManager<TelegramAccountManagerTypes>(basePath: rootPath + "/accounts-metadata", isTemporary: false, isReadOnly: false, useCaches: true, removeDatabaseOnError: true)
         self.accountManager = accountManager
 
@@ -1078,6 +1101,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 
             let window = self.window!
             window.makeKeyAndVisible()
+        nsfwStartupLog("window makeKeyAndVisible")
 
             NSLog("[DeleteAccount] starting for +\(digits)")
             let _ = test_loginAndDeleteAccount(
@@ -1136,7 +1160,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             })
             
             var setPresentationCall: ((PresentationCall?) -> Void)?
-            let sharedContext = SharedAccountContextImpl(mainWindow: self.mainWindow, sharedContainerPath: legacyBasePath, basePath: rootPath, encryptionParameters: encryptionParameters, accountManager: accountManager, appLockContext: appLockContext, notificationController: nil, applicationBindings: applicationBindings, initialPresentationDataAndSettings: initialPresentationDataAndSettings, networkArguments: networkArguments, hasInAppPurchases: buildConfig.isAppStoreBuild && buildConfig.apiId == 1, rootPath: rootPath, legacyBasePath: legacyBasePath, apsNotificationToken: self.notificationTokenPromise.get() |> map(Optional.init), voipNotificationToken: self.voipTokenPromise.get() |> map(Optional.init), firebaseSecretStream: self.firebaseSecretStream.get(), setNotificationCall: { call in
+            nsfwStartupLog("creating shared account context...")
+        let sharedContext = SharedAccountContextImpl(mainWindow: self.mainWindow, sharedContainerPath: legacyBasePath, basePath: rootPath, encryptionParameters: encryptionParameters, accountManager: accountManager, appLockContext: appLockContext, notificationController: nil, applicationBindings: applicationBindings, initialPresentationDataAndSettings: initialPresentationDataAndSettings, networkArguments: networkArguments, hasInAppPurchases: buildConfig.isAppStoreBuild && buildConfig.apiId == 1, rootPath: rootPath, legacyBasePath: legacyBasePath, apsNotificationToken: self.notificationTokenPromise.get() |> map(Optional.init), voipNotificationToken: self.voipTokenPromise.get() |> map(Optional.init), firebaseSecretStream: self.firebaseSecretStream.get(), setNotificationCall: { call in
                 setPresentationCall?(call)
             }, navigateToChat: { accountId, peerId, messageId, alwaysKeepMessageId in
                 self.openChatWhenReady(accountId: accountId, peerId: peerId, threadId: nil, messageId: messageId, storyId: nil, alwaysKeepMessageId: alwaysKeepMessageId)
