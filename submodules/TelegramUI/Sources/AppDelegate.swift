@@ -303,7 +303,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let appGroupName = "group.\(baseAppBundleId)"
 
         let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
-        configuration.sharedContainerIdentifier = appGroupName
+        // MARK: NSFWgram — attach the shared container only when the app group is available
+        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName) != nil {
+            configuration.sharedContainerIdentifier = appGroupName
+        }
         configuration.isDiscretionary = false
         let session = URLSession(configuration: configuration, delegate: self, delegateQueue: .main)
         self.urlSessions.append(session)
@@ -659,10 +662,11 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             isICloudEnabled: buildConfig.isICloudEnabled
         )
         
-        guard let appGroupUrl = maybeAppGroupUrl else {
-            self.mainWindow?.presentNative(UIAlertController(title: nil, message: "Error 2", preferredStyle: .alert))
-            return true
-        }
+        // MARK: NSFWgram — do not bail out when the app group container is unavailable
+        // (free re-signing rewrites the group entitlement); fall back to the app-local
+        // container so the app still launches.
+        let appGroupUrl = maybeAppGroupUrl
+            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         
         var isDebugConfiguration = false
         #if DEBUG
