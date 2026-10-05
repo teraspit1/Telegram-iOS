@@ -650,8 +650,6 @@ plist_fragment(
     """
     <key>CFBundleDisplayName</key>
     <string>NSFWgram</string>
-    <key>UIFileSharingEnabled</key>
-    <true/>
     """
 )
 
@@ -1740,8 +1738,6 @@ plist_fragment(
     <string>en</string>
     <key>CFBundleDisplayName</key>
     <string>NSFWgram</string>
-    <key>UIFileSharingEnabled</key>
-    <true/>
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}</string>
     <key>CFBundleName</key>
@@ -1847,7 +1843,7 @@ plist_fragment(
         <integer>2</integer>
     </array>
     <key>UIFileSharingEnabled</key>
-    <false/>
+    <true/>
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen</string>
     <key>UIRequiresPersistentWiFi</key>
