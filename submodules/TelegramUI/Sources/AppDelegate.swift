@@ -663,10 +663,12 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         )
         
         // MARK: NSFWgram — do not bail out when the app group container is unavailable
-        // (free re-signing rewrites the group entitlement); fall back to the app-local
-        // container so the app still launches.
+        // (free re-signing rewrites the group entitlement); fall back to an isolated
+        // app-local container so the app still launches. NOTE: must be a dedicated
+        // subdirectory — performAppGroupUpgrades() deletes unknown dirs inside it.
         let appGroupUrl = maybeAppGroupUrl
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("app-group-fallback", isDirectory: true)
         
         var isDebugConfiguration = false
         #if DEBUG
