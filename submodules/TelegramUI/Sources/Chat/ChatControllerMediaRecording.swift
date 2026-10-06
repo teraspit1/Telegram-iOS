@@ -123,6 +123,7 @@ import ChatMediaInputStickerGridItem
 
 extension ChatControllerImpl {
     func requestAudioRecorder(beginWithTone: Bool, existingDraft: ChatInterfaceMediaDraftState.Audio? = nil) {
+        nsfwStartupLog("recording: audio requested (tone=\(beginWithTone))")
         if self.audioRecorderValue == nil {
             if self.recorderFeedback == nil && existingDraft == nil {
                 self.recorderFeedback = HapticFeedback()
@@ -143,10 +144,12 @@ extension ChatControllerImpl {
                     }
                 )
             )
+            nsfwStartupLog("recording: audio recorder created")
         }
     }
     
     func requestVideoRecorder() {
+        nsfwStartupLog("recording: video requested")
         if self.videoRecorderValue == nil {
             if let currentInputPanelFrame = self.chatDisplayNode.currentInputPanelFrame() {
                 if self.recorderFeedback == nil {
@@ -242,6 +245,7 @@ extension ChatControllerImpl {
                     self.resumeMediaRecorder()
                 }
                 self.videoRecorder.set(.single(controller))
+                nsfwStartupLog("recording: video controller created")
             }
         }
     }

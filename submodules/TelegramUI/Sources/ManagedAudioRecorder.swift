@@ -333,20 +333,24 @@ final class ManagedAudioRecorderContext {
         
         addAudioRecorderContext(self.id, self)
         addAudioUnitHolder(self.id, queue, self.audioUnit)
+        nsfwStartupLog("recorder: context created (tone=\(beginWithTone), resume=\(resumeData != nil))")
         
         if let resumeData {
             guard let stateDict = try? JSONSerialization.jsonObject(with: resumeData.resumeData, options: []) as? [String: Any] else {
                 Logger.shared.log("ManagedAudioRecorder", "Failed to deserialize JSON")
+                nsfwStartupLog("recorder: FAILED to deserialize resume data")
                 return
             }
             let success = self.oggWriter.resume(with: self.dataItem, encoderState: stateDict)
             if !success {
                 Logger.shared.log("ManagedAudioRecorder", "Failed to resume OggWriter")
+                nsfwStartupLog("recorder: FAILED to resume ogg writer")
                 return
             }
         } else {
             self.oggWriter.begin(with: self.dataItem)
         }
+        nsfwStartupLog("recorder: ogg writer ready")
         
         self.idleTimerExtensionDisposable = (Signal<Void, NoError> { subscriber in
             return pushIdleTimerExtension()
@@ -428,12 +432,14 @@ final class ManagedAudioRecorderContext {
         }
         
         let _ = self.audioUnit.swap(audioUnit)
+        nsfwStartupLog("recorder: audio unit initialized")
     }
     
     func start() {
         assert(self.queue.isCurrent())
         
         self.paused = false
+        nsfwStartupLog("recorder: start (tone=\(self.beginWithTone))")
     
         if self.audioSessionDisposable == nil {
             let queue = self.queue
@@ -463,6 +469,7 @@ final class ManagedAudioRecorderContext {
     }
     
     func audioSessionAcquired(headset: Bool) {
+        nsfwStartupLog("recorder: audio session acquired (headset=\(headset))")
         if let toneRenderer = self.toneRenderer, headset || self.beginWithTone {
             self.beganWithTone(true)
             if !self.toneRendererAudioSessionActivated {
@@ -477,9 +484,11 @@ final class ManagedAudioRecorderContext {
         
         if let audioUnit = self.audioUnit.with({ $0 }) {
             guard AudioOutputUnitStart(audioUnit) == noErr else {
+                nsfwStartupLog("recorder: AudioOutputUnitStart FAILED")
                 self.stop()
                 return
             }
+            nsfwStartupLog("recorder: audio unit started")
         }
     }
     

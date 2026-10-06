@@ -106,7 +106,12 @@ final class LegacyGlassView: UIView {
     
     override init(frame: CGRect) {
         self.backdropLayerDelegate = BackdropLayerDelegate()
-        self.backdropLayer = createBackdropLayer()
+        // NSFWgram: no liquid glass below iOS 26 — glass panels render as plain translucent fills
+        if #available(iOS 26.0, *) {
+            self.backdropLayer = createBackdropLayer()
+        } else {
+            self.backdropLayer = nil
+        }
         
         super.init(frame: frame)
         

@@ -32,6 +32,23 @@ import ChatControllerInteraction
 import LottieComponent
 import GlassBackgroundComponent
 
+// NSFWgram: flight recorder for the round video (circle) recording path —
+// appends to the same Documents/startup-log.txt as the startup logger.
+func nsfwVideoRecorderLog(_ text: String) {
+    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let path = docs.appendingPathComponent("startup-log.txt").path
+    let line = "\(Date()) NSFWgram: \(text)\n"
+    if let fh = FileHandle(forWritingAtPath: path) {
+        defer { try? fh.close() }
+        fh.seekToEndOfFile()
+        if let d = line.data(using: .utf8) {
+            fh.write(d)
+        }
+    } else {
+        try? line.write(toFile: path, atomically: true, encoding: .utf8)
+    }
+}
+
 struct CameraState: Equatable {
     enum Recording: Equatable {
         case none
@@ -427,6 +444,7 @@ private final class VideoMessageCameraScreenComponent: CombinedComponent {
                     guard let self else {
                         return
                     }
+                    nsfwVideoRecorderLog("vmcs: camera.startRecording invoked")
                     self.resultDisposable.set((camera.startRecording()
                     |> deliverOnMainQueue).startStrict(next: { [weak self] recordingData in
                         let duration = initialDuration + recordingData.duration
@@ -1070,6 +1088,7 @@ public class VideoMessageCameraScreen: ViewController {
             guard self.camera == nil else {
                 return
             }
+            nsfwVideoRecorderLog("vmcs: setupCamera begin")
             
             let camera = Camera(
                 configuration: Camera.Configuration(
@@ -1104,6 +1123,7 @@ public class VideoMessageCameraScreen: ViewController {
             
             camera.focus(at: CGPoint(x: 0.5, y: 0.5), autoFocus: true)
             camera.startCapture()
+            nsfwVideoRecorderLog("vmcs: camera started (round video capture)")
             
             self.camera = camera
             
@@ -1818,6 +1838,7 @@ public class VideoMessageCameraScreen: ViewController {
         
         self.navigationPresentation = .flatModal
         
+        nsfwVideoRecorderLog("vmcs: controller init")
         self.requestAudioSession()
     }
 
@@ -1833,6 +1854,7 @@ public class VideoMessageCameraScreen: ViewController {
         self.displayNode = Node(controller: self)
 
         super.displayNodeDidLoad()
+        nsfwVideoRecorderLog("vmcs: display node loaded")
     }
         
     fileprivate var didSend = false
@@ -2112,10 +2134,12 @@ public class VideoMessageCameraScreen: ViewController {
         } else {
             audioSessionType = .record(speaker: false, video: false, withOthers: true)
         }
+        nsfwVideoRecorderLog("vmcs: audio session pushed (pauseMusic=\(audioSessionType == .record(speaker: false, video: false, withOthers: false)))")
       
         self.audioSessionDisposable = self.context.sharedContext.mediaManager.audioSession.push(audioSessionType: audioSessionType, activate: { [weak self] _ in
             if let self {
                 Queue.mainQueue().after(0.05) {
+                    nsfwVideoRecorderLog("vmcs: audio session activated -> setupCamera")
                     self.node.setupCamera()
                 }
             }
